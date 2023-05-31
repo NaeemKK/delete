@@ -1,0 +1,94 @@
+# Copyright (c) 2021 Project CHIP Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: 12.1.1. [TC-TSUIC-1.1] Global attributes with server as DUT
+
+PICS:
+    - TSUIC.S
+
+config:
+    nodeId: 0x12344321
+    cluster: "Thermostat User Interface Configuration"
+    endpoint: 1
+
+tests:
+    - label: "Wait for the commissioned device to be retrieved"
+      cluster: "DelayCommands"
+      command: "WaitForCommissionee"
+      arguments:
+          values:
+              - name: "nodeId"
+                value: nodeId
+
+    - label: "TH read ClusterRevision attribute from the DUT"
+      command: "readAttribute"
+      attribute: "ClusterRevision"
+      response:
+          value: 2
+          constraints:
+              type: int16u
+
+    - label: "Read FeatureMap attribute from the DUT"
+      command: "readAttribute"
+      attribute: "FeatureMap"
+      response:
+          value: 0
+          constraints:
+              type: bitmap32
+
+    - label: "Read the global attribute: AttributeList"
+      command: "readAttribute"
+      attribute: "AttributeList"
+      response:
+          constraints:
+              type: list
+              contains: [0, 1, 2, 65528, 65529, 65530, 65531, 65532, 65533]
+
+    - label: "Read the global attribute: AcceptedCommandList"
+      command: "readAttribute"
+      attribute: "AcceptedCommandList"
+      response:
+          value: []
+          constraints:
+              type: list
+
+    - label: "Read the global attribute: GeneratedCommandList"
+      command: "readAttribute"
+      attribute: "GeneratedCommandList"
+      response:
+          value: []
+          constraints:
+              type: list
+
+    #Manufacturer specific event IDs check not possible
+    - label:
+          "Read EventList attribute from the DUT.For this cluster the list is
+          usually empty but it can contain manufacturer specific event IDs."
+      verification: |
+          ./chip-tool thermostatuserinterfaceconfiguration read event-list 1 1
+          On TH(chip-tool), Verify that the DUT response provides a list of supported events. For this cluster the list is usually empty but it can contain manufacturer specific event IDs.
+          [1676466144.926927][28127:28129] CHIP:TOO: Endpoint: 1 Cluster: 0x0000_0204 Attribute 0x0000_FFFA DataVersion: 317726044
+          [1676466144.926964][28127:28129] CHIP:TOO:   EventList: 0 entries
+          [1676466144.927021][28127:28129] CHIP:EM: <<< [E:22756i S:22644 M:99305003 (Ack:156666885)] (S) Msg TX to 1:0000000000000001 [110F] --- Type 0000:10 (SecureChannel:StandaloneAck)
+          [1676466144.927035][28127:28129] CHIP:IN: (S) Sending msg 99305003 on secure session with LSID: 22644
+          [1676466144.927067][28127:28129] CHIP:EM: Flushed pending ack for MessageCounter:156666885 on exchange 22756i
+      cluster: "LogCommands"
+      command: "UserPrompt"
+      PICS: PICS_USER_PROMPT
+      arguments:
+          values:
+              - name: "message"
+                value: "Please enter 'y' for success"
+              - name: "expectedValue"
+                value: "y"
